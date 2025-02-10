@@ -129,9 +129,10 @@
 
         iframe {
             width: 100%;
-            height: 100%;
+            height: calc(100% + 60px); /* Başlığı gizlemek için yüksekliği artır */
             border: none;
             background: white;
+            margin-top: -60px; /* Üst başlığı gizlemek için negatif margin */
         }
 
         .status-bar {
@@ -260,7 +261,7 @@
                 <div class="status-indicator"></div>
                 <span>Bağlantı aktif</span>
             </div>
-            <iframe id="contentFrame" src="about:blank"></iframe>
+            <iframe id="contentFrame" src="about:blank" scrolling="yes"></iframe>
         </div>
     </div>
 
@@ -270,7 +271,6 @@
         const buttons = document.querySelectorAll('.country-btn');
 
         function loadCountry(country) {
-            // Aktif buton stilini güncelle
             buttons.forEach(btn => {
                 btn.classList.remove('active');
                 if(btn.textContent.toLowerCase().includes(country)) {
@@ -280,8 +280,25 @@
 
             loading.style.display = 'block';
             frame.src = `https://sms24.me/en/countries/${country}`;
+            
             frame.onload = () => {
                 loading.style.display = 'none';
+                try {
+                    const iframeDoc = frame.contentDocument || frame.contentWindow.document;
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        header, .navbar, .footer, .ads, .cookie-notice { 
+                            display: none !important; 
+                        }
+                        body { 
+                            padding-top: 0 !important; 
+                            margin-top: 0 !important; 
+                        }
+                    `;
+                    iframeDoc.head.appendChild(style);
+                } catch (e) {
+                    console.log('iframe stil ekleme hatası:', e);
+                }
             };
         }
 
@@ -289,4 +306,4 @@
         window.onload = () => loadCountry('germany');
     </script>
 </body>
-</html>
+</html>.

@@ -88,7 +88,8 @@
     </div>
 
     <script>
-        const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+        const PROXY_URL = 'https://corsproxy.io/?';
+
         let currentNumber = '';
 
         document.querySelectorAll('.country-btn').forEach(button => {
@@ -139,22 +140,37 @@
             try {
                 const response = await fetch(PROXY_URL + encodeURIComponent(`https://sms24.me/en/countries/${country}`));
                 const html = await response.text();
+                
+                // HTML içeriğini konsola yazdır
+                console.log('HTML Content:', html);
+                
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                const numbers = Array.from(doc.querySelectorAll('.number-box .number'))
-                    .map(el => el.textContent.trim());
+                // Yeni seçici ile numaraları bul
+                const numbers = Array.from(doc.querySelectorAll('.phones-list .phone-item'))
+                    .map(el => {
+                        const numberEl = el.querySelector('.phone-number');
+                        return numberEl ? numberEl.textContent.trim() : null;
+                    })
+                    .filter(number => number);
+
+                console.log('Found Numbers:', numbers);
 
                 const numbersList = document.getElementById('numbersList');
                 numbersList.innerHTML = '';
                 
-                numbers.forEach(number => {
-                    const button = document.createElement('button');
-                    button.className = 'btn btn-outline-primary number-btn';
-                    button.textContent = number;
-                    button.addEventListener('click', () => getMessages(number));
-                    numbersList.appendChild(button);
-                });
+                if (numbers.length === 0) {
+                    numbersList.innerHTML = '<p class="text-center">Bu ülke için aktif numara bulunamadı.</p>';
+                } else {
+                    numbers.forEach(number => {
+                        const button = document.createElement('button');
+                        button.className = 'btn btn-outline-primary number-btn';
+                        button.textContent = number;
+                        button.addEventListener('click', () => getMessages(number));
+                        numbersList.appendChild(button);
+                    });
+                }
 
                 showNumbers();
             } catch (error) {
@@ -171,27 +187,36 @@
             try {
                 const response = await fetch(PROXY_URL + encodeURIComponent(`https://sms24.me/en/numbers/${number}`));
                 const html = await response.text();
+                
+                console.log('Messages HTML:', html);
+                
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
                 const messagesList = document.getElementById('messagesList');
                 messagesList.innerHTML = '';
                 
-                const messages = doc.querySelectorAll('.message-container');
-                messages.forEach(container => {
-                    const time = container.querySelector('.message-date').textContent.trim();
-                    const sender = container.querySelector('label.mb-1').textContent.trim();
-                    const message = container.querySelector('.text-break').textContent.trim();
-                    
-                    const messageBox = document.createElement('div');
-                    messageBox.className = 'message-box';
-                    messageBox.innerHTML = `
-                        <div class="message-time">⏰ ${time}</div>
-                        <div class="message-sender">👤 ${sender}</div>
-                        <div class="message-content">💬 ${message}</div>
-                    `;
-                    messagesList.appendChild(messageBox);
-                });
+                // Yeni seçici ile mesajları bul
+                const messages = doc.querySelectorAll('.sms-list .sms-item');
+                
+                if (messages.length === 0) {
+                    messagesList.innerHTML = '<p class="text-center">Bu numara için mesaj bulunamadı.</p>';
+                } else {
+                    messages.forEach(container => {
+                        const time = container.querySelector('.sms-time')?.textContent.trim() || 'Zaman belirtilmemiş';
+                        const sender = container.querySelector('.sms-sender')?.textContent.trim() || 'Gönderen belirtilmemiş';
+                        const message = container.querySelector('.sms-text')?.textContent.trim() || 'Mesaj içeriği yok';
+                        
+                        const messageBox = document.createElement('div');
+                        messageBox.className = 'message-box';
+                        messageBox.innerHTML = `
+                            <div class="message-time">⏰ ${time}</div>
+                            <div class="message-sender">👤 ${sender}</div>
+                            <div class="message-content">💬 ${message}</div>
+                        `;
+                        messagesList.appendChild(messageBox);
+                    });
+                }
 
                 showMessages();
             } catch (error) {

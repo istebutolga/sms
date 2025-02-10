@@ -43,11 +43,6 @@
             gap: 10px;
         }
 
-        .header-icon {
-            font-size: 24px;
-            margin-right: 8px;
-        }
-
         .content {
             margin-top: 80px;
             padding: 20px;
@@ -65,6 +60,45 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .platforms {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .platform-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .platform-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #f3f4f6;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .platform-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .platform-btn.active {
+            background: #4f46e5;
+            color: white;
         }
 
         .country-btn {
@@ -129,10 +163,10 @@
 
         iframe {
             width: 100%;
-            height: calc(100% + 60px); /* Başlığı gizlemek için yüksekliği artır */
+            height: calc(100% + 60px);
             border: none;
             background: white;
-            margin-top: -60px; /* Üst başlığı gizlemek için negatif margin */
+            margin-top: -60px;
         }
 
         .status-bar {
@@ -184,7 +218,7 @@
                 color: #ffffff;
             }
 
-            .countries, .iframe-container {
+            .countries, .platforms, .iframe-container {
                 background: #2d2d2d;
                 border-color: #404040;
             }
@@ -251,6 +285,15 @@
                 <span>Rusya</span>
             </button>
         </div>
+
+        <div class="platforms" style="display: none;">
+            <div class="platform-filters" id="platformFilters">
+                <button class="platform-btn active" data-platform="all">
+                    <span class="material-icons">apps</span>
+                    Tümü
+                </button>
+            </div>
+        </div>
         
         <div id="loading" class="loading">
             <div class="loading-spinner"></div>
@@ -269,6 +312,84 @@
         const frame = document.getElementById('contentFrame');
         const loading = document.getElementById('loading');
         const buttons = document.querySelectorAll('.country-btn');
+        const platformsDiv = document.querySelector('.platforms');
+        const platformFilters = document.getElementById('platformFilters');
+
+        function detectPlatforms(text) {
+            const platforms = new Set();
+            
+            // Platform algılama kuralları
+            if (text.toLowerCase().includes('instagram')) platforms.add('instagram');
+            if (text.toLowerCase().includes('google')) platforms.add('google');
+            if (text.toLowerCase().includes('whatsapp')) platforms.add('whatsapp');
+            if (text.toLowerCase().includes('facebook')) platforms.add('facebook');
+            if (text.toLowerCase().includes('twitter')) platforms.add('twitter');
+            if (text.toLowerCase().includes('telegram')) platforms.add('telegram');
+            if (text.toLowerCase().includes('snapchat')) platforms.add('snapchat');
+            if (text.toLowerCase().includes('tiktok')) platforms.add('tiktok');
+            
+            return Array.from(platforms);
+        }
+
+        function createPlatformButton(platform) {
+            const button = document.createElement('button');
+            button.className = 'platform-btn';
+            button.setAttribute('data-platform', platform.toLowerCase());
+            
+            const icon = document.createElement('span');
+            icon.className = 'material-icons';
+            
+            // Platform ikonlarını ayarla
+            switch(platform.toLowerCase()) {
+                case 'instagram':
+                    icon.textContent = 'photo_camera';
+                    break;
+                case 'google':
+                    icon.textContent = 'google';
+                    break;
+                case 'whatsapp':
+                    icon.textContent = 'chat';
+                    break;
+                case 'facebook':
+                    icon.textContent = 'facebook';
+                    break;
+                case 'twitter':
+                    icon.textContent = 'twitter';
+                    break;
+                case 'telegram':
+                    icon.textContent = 'send';
+                    break;
+                case 'snapchat':
+                    icon.textContent = 'camera_alt';
+                    break;
+                case 'tiktok':
+                    icon.textContent = 'music_video';
+                    break;
+                default:
+                    icon.textContent = 'apps';
+            }
+            
+            button.appendChild(icon);
+            button.appendChild(document.createTextNode(` ${platform}`));
+            
+            button.addEventListener('click', () => filterMessages(platform.toLowerCase()));
+            
+            return button;
+        }
+
+        function filterMessages(platform) {
+            const iframeDoc = frame.contentDocument || frame.contentWindow.document;
+            const messages = iframeDoc.querySelectorAll('.message-container, .sms-container, .message-box'); // Mesaj elementlerinin class'ları
+            
+            messages.forEach(message => {
+                const messageText = message.textContent.toLowerCase();
+                if (platform === 'all' || messageText.includes(platform)) {
+                    message.style.display = 'block';
+                } else {
+                    message.style.display = 'none';
+                }
+            });
+        }
 
         function loadCountry(country) {
             buttons.forEach(btn => {
@@ -283,8 +404,38 @@
             
             frame.onload = () => {
                 loading.style.display = 'none';
+                
+                // iframe içeriğini analiz et ve platformları tespit et
+                const iframeDoc = frame.contentDocument || frame.contentWindow.document;
+                const messages = iframeDoc.querySelectorAll('.message-container, .sms-container, .message-box');
+                const detectedPlatforms = new Set();
+                
+                messages.forEach(message => {
+                    const platforms = detectPlatforms(message.textContent);
+                    platforms.forEach(platform => detectedPlatforms.add(platform));
+                });
+
+                // Platform filtrelerini güncelle
+                platformFilters.innerHTML = `
+                    <button class="platform-btn active" data-platform="all">
+                        <span class="material-icons">apps</span>
+                        Tümü
+                    </button>
+                `;
+
+                detectedPlatforms.forEach(platform => {
+                    platformFilters.appendChild(createPlatformButton(platform));
+                });
+
+                // Platform filtreleme bölümünü göster
+                if (detectedPlatforms.size > 0) {
+                    platformsDiv.style.display = 'block';
+                } else {
+                    platformsDiv.style.display = 'none';
+                }
+
+                // iframe stillerini uygula
                 try {
-                    const iframeDoc = frame.contentDocument || frame.contentWindow.document;
                     const style = document.createElement('style');
                     style.textContent = `
                         header, .navbar, .footer, .ads, .cookie-notice { 
@@ -306,4 +457,4 @@
         window.onload = () => loadCountry('germany');
     </script>
 </body>
-</html>.
+</html>

@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMS Takip Pro</title>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         * {
@@ -62,23 +60,24 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        .platforms {
-            margin-bottom: 20px;
-            padding: 15px;
+        .message-container {
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            overflow: hidden;
         }
 
-        .platform-filters {
+        .message-filters {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 15px;
         }
 
-        .platform-btn {
+        .filter-btn {
             padding: 8px 16px;
             border: none;
             border-radius: 8px;
@@ -92,13 +91,38 @@
             font-size: 0.9rem;
         }
 
-        .platform-btn:hover {
+        .filter-btn:hover {
             background: #e5e7eb;
         }
 
-        .platform-btn.active {
+        .filter-btn.active {
             background: #4f46e5;
             color: white;
+        }
+
+        .messages {
+            padding: 15px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8fafc;
+            margin-bottom: 10px;
+            border-left: 4px solid #4f46e5;
+        }
+
+        .message-platform {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .message-content {
+            font-size: 0.95rem;
         }
 
         .country-btn {
@@ -152,39 +176,6 @@
             animation: spin 1s linear infinite;
         }
 
-        .iframe-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            height: calc(100vh - 180px);
-            position: relative;
-        }
-
-        iframe {
-            width: 100%;
-            height: calc(100% + 60px);
-            border: none;
-            background: white;
-            margin-top: -60px;
-        }
-
-        .status-bar {
-            background: #f8fafc;
-            padding: 10px 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-        }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -209,18 +200,36 @@
                 padding: 10px 15px;
                 font-size: 0.9rem;
             }
+
+            .filter-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
         }
 
-        /* Dark Mode Desteği */
+        /* Dark Mode */
         @media (prefers-color-scheme: dark) {
             body {
                 background: #1a1a1a;
                 color: #ffffff;
             }
 
-            .countries, .platforms, .iframe-container {
+            .message-container, .countries {
                 background: #2d2d2d;
                 border-color: #404040;
+            }
+
+            .message {
+                background: #333333;
+            }
+
+            .filter-btn {
+                background: #404040;
+                color: #e5e7eb;
+            }
+
+            .filter-btn:hover {
+                background: #4f46e5;
             }
 
             .country-btn {
@@ -232,11 +241,6 @@
             .country-btn:hover, .country-btn.active {
                 background: #8b5cf6;
                 color: white;
-            }
-
-            .status-bar {
-                background: #2d2d2d;
-                border-color: #404040;
             }
 
             .loading {
@@ -286,104 +290,91 @@
             </button>
         </div>
 
-        <div class="platforms" style="display: none;">
-            <div class="platform-filters" id="platformFilters">
-                <button class="platform-btn active" data-platform="all">
+        <div class="message-container">
+            <div class="message-filters">
+                <button class="filter-btn active" data-platform="all">
                     <span class="material-icons">apps</span>
                     Tümü
                 </button>
+                <button class="filter-btn" data-platform="instagram">
+                    <span class="material-icons">photo_camera</span>
+                    Instagram
+                </button>
+                <button class="filter-btn" data-platform="google">
+                    <span class="material-icons">google</span>
+                    Google
+                </button>
+                <button class="filter-btn" data-platform="whatsapp">
+                    <span class="material-icons">chat</span>
+                    WhatsApp
+                </button>
+                <button class="filter-btn" data-platform="facebook">
+                    <span class="material-icons">facebook</span>
+                    Facebook
+                </button>
+                <button class="filter-btn" data-platform="other">
+                    <span class="material-icons">more_horiz</span>
+                    Diğer
+                </button>
+            </div>
+            <div class="messages" id="messageList">
+                <!-- Mesajlar dinamik olarak buraya eklenecek -->
             </div>
         </div>
         
         <div id="loading" class="loading">
             <div class="loading-spinner"></div>
         </div>
-        
-        <div class="iframe-container">
-            <div class="status-bar">
-                <div class="status-indicator"></div>
-                <span>Bağlantı aktif</span>
-            </div>
-            <iframe id="contentFrame" src="about:blank" scrolling="yes"></iframe>
-        </div>
     </div>
 
     <script>
-        const frame = document.getElementById('contentFrame');
         const loading = document.getElementById('loading');
         const buttons = document.querySelectorAll('.country-btn');
-        const platformsDiv = document.querySelector('.platforms');
-        const platformFilters = document.getElementById('platformFilters');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const messageList = document.getElementById('messageList');
 
-        function detectPlatforms(text) {
-            const platforms = new Set();
-            
-            // Platform algılama kuralları
-            if (text.toLowerCase().includes('instagram')) platforms.add('instagram');
-            if (text.toLowerCase().includes('google')) platforms.add('google');
-            if (text.toLowerCase().includes('whatsapp')) platforms.add('whatsapp');
-            if (text.toLowerCase().includes('facebook')) platforms.add('facebook');
-            if (text.toLowerCase().includes('twitter')) platforms.add('twitter');
-            if (text.toLowerCase().includes('telegram')) platforms.add('telegram');
-            if (text.toLowerCase().includes('snapchat')) platforms.add('snapchat');
-            if (text.toLowerCase().includes('tiktok')) platforms.add('tiktok');
-            
-            return Array.from(platforms);
+        // Platform algılama fonksiyonu
+        function detectPlatform(text) {
+            text = text.toLowerCase();
+            if (text.includes('instagram')) return 'instagram';
+            if (text.includes('google')) return 'google';
+            if (text.includes('whatsapp')) return 'whatsapp';
+            if (text.includes('facebook')) return 'facebook';
+            return 'other';
         }
 
-        function createPlatformButton(platform) {
-            const button = document.createElement('button');
-            button.className = 'platform-btn';
-            button.setAttribute('data-platform', platform.toLowerCase());
-            
-            const icon = document.createElement('span');
-            icon.className = 'material-icons';
-            
-            // Platform ikonlarını ayarla
-            switch(platform.toLowerCase()) {
-                case 'instagram':
-                    icon.textContent = 'photo_camera';
-                    break;
-                case 'google':
-                    icon.textContent = 'google';
-                    break;
-                case 'whatsapp':
-                    icon.textContent = 'chat';
-                    break;
-                case 'facebook':
-                    icon.textContent = 'facebook';
-                    break;
-                case 'twitter':
-                    icon.textContent = 'twitter';
-                    break;
-                case 'telegram':
-                    icon.textContent = 'send';
-                    break;
-                case 'snapchat':
-                    icon.textContent = 'camera_alt';
-                    break;
-                case 'tiktok':
-                    icon.textContent = 'music_video';
-                    break;
-                default:
-                    icon.textContent = 'apps';
+        // Mesaj oluşturma fonksiyonu
+        function createMessageElement(messageText, timestamp) {
+            const platform = detectPlatform(messageText);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${platform}`;
+            messageDiv.innerHTML = `
+                <div class="message-platform">
+                    <span class="material-icons">${getPlatformIcon(platform)}</span>
+                    ${platform.charAt(0).toUpperCase() + platform.slice(1)}
+                </div>
+                <div class="message-content">${messageText}</div>
+                <div class="message-time">${timestamp}</div>
+            `;
+            return messageDiv;
+        }
+
+        // Platform ikonlarını alma fonksiyonu
+        function getPlatformIcon(platform) {
+            switch(platform) {
+                case 'instagram': return 'photo_camera';
+                case 'google': return 'google';
+                case 'whatsapp': return 'chat';
+                case 'facebook': return 'facebook';
+                default: return 'more_horiz';
             }
-            
-            button.appendChild(icon);
-            button.appendChild(document.createTextNode(` ${platform}`));
-            
-            button.addEventListener('click', () => filterMessages(platform.toLowerCase()));
-            
-            return button;
         }
 
+        // Filtreleme fonksiyonu
         function filterMessages(platform) {
-            const iframeDoc = frame.contentDocument || frame.contentWindow.document;
-            const messages = iframeDoc.querySelectorAll('.message-container, .sms-container, .message-box'); // Mesaj elementlerinin class'ları
-            
+            const messages = document.querySelectorAll('.message');
             messages.forEach(message => {
-                const messageText = message.textContent.toLowerCase();
-                if (platform === 'all' || messageText.includes(platform)) {
+                if (platform === 'all' || message.classList.contains(platform)) {
                     message.style.display = 'block';
                 } else {
                     message.style.display = 'none';
@@ -391,7 +382,17 @@
             });
         }
 
-        function loadCountry(country) {
+        // Filter butonları için event listeners
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                filterMessages(button.dataset.platform);
+            });
+        });
+
+        // SMS API'den mesajları alma ve işleme
+        async function loadCountry(country) {
             buttons.forEach(btn => {
                 btn.classList.remove('active');
                 if(btn.textContent.toLowerCase().includes(country)) {
@@ -400,57 +401,57 @@
             });
 
             loading.style.display = 'block';
-            frame.src = `https://sms24.me/en/countries/${country}`;
-            
-            frame.onload = () => {
-                loading.style.display = 'none';
+            messageList.innerHTML = ''; // Mevcut mesajları temizle
+
+            try {
+                // API'den mesajları al
+                const response = await fetch(`https://sms24.me/en/countries/${country}`);
+                const data = await response.text();
                 
-                // iframe içeriğini analiz et ve platformları tespit et
-                const iframeDoc = frame.contentDocument || frame.contentWindow.document;
-                const messages = iframeDoc.querySelectorAll('.message-container, .sms-container, .message-box');
-                const detectedPlatforms = new Set();
+                // HTML parser
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
                 
+                // Mesajları bul ve işle
+                const messages = doc.querySelectorAll('.message-box, .sms-message');
                 messages.forEach(message => {
-                    const platforms = detectPlatforms(message.textContent);
-                    platforms.forEach(platform => detectedPlatforms.add(platform));
+                    const messageText = message.textContent.trim();
+                    const timestamp = message.querySelector('.time')?.textContent.trim() || '';
+                    const messageElement = createMessageElement(messageText, timestamp);
+                    messageList.appendChild(messageElement);
                 });
 
-                // Platform filtrelerini güncelle
-                platformFilters.innerHTML = `
-                    <button class="platform-btn active" data-platform="all">
+                // Filtreleme butonlarını güncelle
+                const platforms = new Set();
+                doc.querySelectorAll('.message-box, .sms-message').forEach(message => {
+                    const platform = detectPlatform(message.textContent);
+                    platforms.add(platform);
+                });
+
+                const filterContainer = document.querySelector('.message-filters');
+                filterContainer.innerHTML = `
+                    <button class="filter-btn active" data-platform="all">
                         <span class="material-icons">apps</span>
                         Tümü
                     </button>
                 `;
 
-                detectedPlatforms.forEach(platform => {
-                    platformFilters.appendChild(createPlatformButton(platform));
-                });
-
-                // Platform filtreleme bölümünü göster
-                if (detectedPlatforms.size > 0) {
-                    platformsDiv.style.display = 'block';
-                } else {
-                    platformsDiv.style.display = 'none';
-                }
-
-                // iframe stillerini uygula
-                try {
-                    const style = document.createElement('style');
-                    style.textContent = `
-                        header, .navbar, .footer, .ads, .cookie-notice { 
-                            display: none !important; 
-                        }
-                        body { 
-                            padding-top: 0 !important; 
-                            margin-top: 0 !important; 
-                        }
+                platforms.forEach(platform => {
+                    const button = document.createElement('button');
+                    button.className = 'filter-btn';
+                    button.dataset.platform = platform;
+                    button.innerHTML = `
+                        <span class="material-icons">${getPlatformIcon(platform)}</span>
+                        ${platform.charAt(0).toUpperCase() + platform.slice(1)}
                     `;
-                    iframeDoc.head.appendChild(style);
-                } catch (e) {
-                    console.log('iframe stil ekleme hatası:', e);
-                }
-            };
+                    button.addEventListener('click', () => filterMessages(platform));
+                    filterContainer.appendChild(button);
+                });
+            } catch (error) {
+                console.error('Mesaj yükleme hatası:', error);
+            } finally {
+                loading.style.display = 'none';
+            }
         }
 
         // Sayfa yüklendiğinde varsayılan olarak Almanya'yı göster
